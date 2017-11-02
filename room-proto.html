@@ -1,0 +1,345 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>room calc</title>
+    </head>
+    <body>
+        <h3>Room Calc</h3>
+        <div id="calcInput" style="float: left"></div>
+        <div id="calcOutput" style="float: left"></div>
+        <script type="text/javascript">
+            function Room(width, length, height) {
+                this.width = width || 5;
+                this.length = length || 10;
+                this.height = height || 3;
+                this._materials = {
+                    wallpaper: {
+                        normal: 10,
+                        fabric: 20,
+                        vinyl: 30
+                    },
+                    paint: {
+                        green: 15,
+                        yellow: 16,
+                        white: 14
+                    },
+                    whitewash: 17
+                };
+                this._userMaterials = ['wallpaper', 'normal'];
+                this._price = 0;
+                this._cost = 0;
+            }
+
+            Room.prototype.walls = function () {
+                    return 2 * (this.width + this.length) * this.height;
+                };
+
+            Room.prototype.getMaterials = function() {
+                    return this._materials;
+                };
+
+            Room.prototype.setUserMaterials = function(chosenMaterials) {
+                this._userMaterials = [];
+                for (var i = 0; i < chosenMaterials.length; i++) {
+                    this._userMaterials[i] = chosenMaterials[i];
+                }
+            };
+
+            Room.prototype.getUserMaterials = function() {
+                return this._userMaterials;
+            };
+
+            Room.prototype._calculatePrice = function() {
+                if (this._userMaterials.length == 2) {
+                    this._price = this._materials[this._userMaterials[0]][this._userMaterials[1]];
+                } else if (this._userMaterials.length == 1) {
+                    this._price = this._materials[this._userMaterials[0]];
+                } else {
+                    this._price = 0;
+                }
+            };
+
+            Room.prototype.getPrice = function(){
+                this._calculatePrice();
+                return this._price;
+            };
+
+            Room.prototype._calculateCost = function() {
+                this._calculatePrice();
+                this._cost =  this.walls() * this._price;
+            };
+
+            Room.prototype.getCost = function() {
+                this._calculateCost();
+                return this._cost;
+            };
+
+
+            var roomResult = [new Room()];
+            showRoomForm.call(roomResult[0]);
+            showRoomOutput.call(roomResult, 0);
+            showTotal(getTotal.call(roomResult));
+
+            document.getElementsByClassName('room-size')[0].addEventListener('change', function() {
+                var i = roomResult.length - 1;
+                readRoomSize.call(roomResult[i]);
+                changeRoomOutput.call(roomResult, i);
+                changeTotalOutput.call(roomResult, getTotal.call(roomResult));
+            });
+            document.getElementsByClassName('room-materials')[0].addEventListener('change', function() {
+                var i = roomResult.length - 1;
+                readRoomMaterials.call(roomResult[i]);
+                changeRoomOutput.call(roomResult, i);
+                changeTotalOutput.call(roomResult, getTotal.call(roomResult));
+            });
+            document.getElementsByClassName('room-add')[0].addEventListener('click', function() {
+                roomResult.push(new Room());
+                var i = roomResult.length - 1;
+                readRoomMaterials.call(roomResult[i]);
+                showRoomOutput.call(roomResult, i);
+                changeTotalOutput.call(roomResult, getTotal.call(roomResult));
+            });
+
+
+            function showRoomForm() {
+                var calcInput = document.getElementById('calcInput');
+
+                var addRoom = document.createElement('button');
+                addRoom.className = 'room-add';
+                addRoom.appendChild(document.createTextNode('Add room'));
+                calcInput.appendChild(addRoom);
+
+                var roomForm = document.createElement('form');
+                calcInput.appendChild(roomForm);
+
+                var roomSize = document.createElement('fieldset');
+                roomSize.className = 'room-size';
+                roomForm.appendChild(roomSize);
+
+                var roomSizeLegend = document.createElement('legend');
+                roomSizeLegend.appendChild(document.createTextNode('Size'));
+                roomSize.appendChild(roomSizeLegend);
+
+                var roomInputWidthLabel = document.createElement('label');
+                roomInputWidthLabel.appendChild(document.createTextNode('width:  '));
+                roomInputWidthLabel.style.display = 'block';
+                roomSize.appendChild(roomInputWidthLabel);
+
+                var roomInputWidth = document.createElement('input');
+                roomInputWidth.type = 'number';
+                roomInputWidth.style.width = '50px';
+                roomInputWidth.name = 'room-input-width';
+                roomInputWidth.className = 'room-input-width';
+                roomInputWidth.value = this.width;
+                roomInputWidthLabel.appendChild(roomInputWidth);
+
+                var roomInputLengthLabel = document.createElement('label');
+                roomInputLengthLabel.appendChild(document.createTextNode('length: '));
+                roomInputLengthLabel.style.display = 'block';
+                roomSize.appendChild(roomInputLengthLabel);
+
+                var roomInputLength = document.createElement('input');
+                roomInputLength.type = 'number';
+                roomInputLength.style.width = '50px';
+                roomInputLength.name = 'room-input-length';
+                roomInputLength.className = 'room-input-length';
+                roomInputLength.value = this.length;
+                roomInputLengthLabel.appendChild(roomInputLength);
+
+                var roomInputHeightLabel = document.createElement('label');
+                roomInputHeightLabel.appendChild(document.createTextNode('height: '));
+                roomInputHeightLabel.style.display = 'block';
+                roomSize.appendChild(roomInputHeightLabel);
+
+                var roomInputHeight = document.createElement('input');
+                roomInputHeight.type = 'number';
+                roomInputHeight.style.width = '50px';
+                roomInputHeight.name = 'room-input-height';
+                roomInputHeight.className = 'room-input-height';
+                roomInputHeight.value = this.height;
+                roomInputHeightLabel.appendChild(roomInputHeight);
+
+                var roomMaterials = document.createElement('fieldset');
+                roomMaterials.className = 'room-materials';
+                roomForm.appendChild(roomMaterials);
+
+                var roomMaterialsLegend = document.createElement('legend');
+                roomMaterialsLegend.appendChild(document.createTextNode('Materials'));
+                roomMaterials.appendChild(roomMaterialsLegend);
+
+                roomMaterials.appendChild(document.createTextNode('Choose material: '));
+                var roomMaterialsLabel = {};
+                var roomInputMaterials = {};
+                var roomMaterialTypes = {};
+                for (var key in this.getMaterials()) {
+                    roomMaterialsLabel[key] = document.createElement('label');
+                    roomMaterialsLabel[key].style.display = 'block';
+                    roomMaterials.appendChild(roomMaterialsLabel[key]);
+
+                    roomInputMaterials[key] = document.createElement('input');
+                    roomInputMaterials[key].type = 'radio';
+                    roomInputMaterials[key].name = 'room-input-material';
+                    roomInputMaterials[key].className = 'room-input-material';
+                    roomInputMaterials[key].value = key;
+                    roomMaterialsLabel[key].appendChild(roomInputMaterials[key]);
+                    roomMaterialsLabel[key].appendChild(document.createTextNode(key));
+
+                    roomMaterialTypes[key] = document.createElement('div');
+                    roomMaterialTypes[key].style.display = 'none';
+                    roomMaterialTypeTitle = {
+                        wallpaper: 'Type of wallpaper: ',
+                        paint:     'Color: '
+                    };
+                    if (key in roomMaterialTypeTitle) {
+                        roomMaterialTypes[key].appendChild(document.createTextNode(roomMaterialTypeTitle[key]));
+                    }
+                    var roomMaterialTypeLabel = {};
+                    var roomInputMaterialTypeInput = {};
+                    for (var type in this.getMaterials()[key]) {
+                        roomMaterialTypeLabel[type] = document.createElement('label');
+                        roomMaterialTypeLabel[type].style.display = 'block';
+                        roomMaterialTypes[key].appendChild(roomMaterialTypeLabel[type]);
+
+                        roomInputMaterialTypeInput[type] = document.createElement('input');
+                        roomInputMaterialTypeInput[type].type = 'radio';
+                        roomInputMaterialTypeInput[type].name = 'room-input-material-' + key;
+                        roomInputMaterialTypeInput[type].className = 'room-input-material-' + key;
+                        roomInputMaterialTypeInput[type].value = type;
+                        roomMaterialTypeLabel[type].appendChild(roomInputMaterialTypeInput[type]);
+                        roomMaterialTypeLabel[type].appendChild(document.createTextNode(type));
+                    }
+
+                    if ('normal' in roomInputMaterialTypeInput) {
+                        roomInputMaterialTypeInput.normal.checked = true;
+                    }
+                    if ('green' in roomInputMaterialTypeInput) {
+                        roomInputMaterialTypeInput.green.checked = true;
+                    }
+                }
+                for (key in roomMaterialTypes) {
+                    roomMaterials.appendChild(roomMaterialTypes[key]);
+                }
+
+                if ('wallpaper' in roomInputMaterials) {
+                    roomInputMaterials.wallpaper.checked = true;
+                }
+
+                showMaterialType(roomMaterialTypes, roomInputMaterials);
+                roomMaterials.addEventListener('change', function() {
+                    showMaterialType(roomMaterialTypes, roomInputMaterials);
+                });
+            }
+
+            function showMaterialType(roomMaterialTypes, roomInputMaterials) {
+                for (var key in roomInputMaterials) {
+                    if (key in roomMaterialTypes) {
+                        if (roomInputMaterials[key].checked) {
+                            roomMaterialTypes[key].style.display = 'block';
+                        } else {
+                            roomMaterialTypes[key].style.display = 'none';
+                        }
+                    }
+                }
+            }
+
+            function showRoomOutput(i) {
+                var calcOutput = document.getElementById('calcOutput');
+
+                var roomOutput = document.createElement('div');
+                roomOutput.className = 'room-output';
+                calcOutput.appendChild(roomOutput);
+
+                var roomTitle = document.createElement("h4");
+                roomTitle.innerHTML = 'room #' + (i + 1);
+                roomOutput.appendChild(roomTitle);
+
+                var roomContent = document.createElement('ul');
+                roomOutput.appendChild(roomContent);
+
+                var roomMaterials = document.createElement('li');
+                roomMaterials.innerHTML = 'action/materials: ' + this[i].getUserMaterials().join(', ');
+                roomContent.appendChild(roomMaterials);
+
+                var roomPrice = document.createElement('li');
+                roomPrice.innerHTML = 'price for 1 m: ' + this[i].getPrice();
+                roomContent.appendChild(roomPrice);
+
+                var roomWalls = document.createElement('li');
+                roomWalls.innerHTML = 'walls square: ' + this[i].walls().toFixed(2);
+                roomContent.appendChild(roomWalls);
+
+                var roomCost = document.createElement('li');
+                roomCost.innerHTML = 'cost:              ' + this[i].getCost().toFixed(2);
+                roomContent.appendChild(roomCost);
+            }
+
+            function showTotal(total) {
+                var calcOutput = document.getElementById('calcOutput');
+
+                var totalOutput = document.createElement('div');
+                totalOutput.className = 'total-output';
+                calcOutput.appendChild(totalOutput);
+
+                var horizontalLine = document.createElement('hr');
+                totalOutput.appendChild(horizontalLine);
+
+                var totalResult = document.createElement('h4');
+                totalResult.className = 'total-result';
+                totalResult.innerHTML = 'Total cost: ' + total.toFixed(2);
+                totalOutput.appendChild(totalResult);
+            }
+
+            function getTotal() {
+                var total = 0;
+                for (var i = 0; i < this.length; i++) {
+                    total += this[i].getCost();
+                }
+                return total;
+            }
+
+            function readRoomSize() {
+                this.width = parseFloat(document.getElementsByClassName('room-input-width')[0].value);
+                this.length = parseFloat(document.getElementsByClassName('room-input-length')[0].value);
+                this.height = parseFloat(document.getElementsByClassName('room-input-height')[0].value);
+            }
+
+            function readRoomMaterials() {
+                currentMaterials = [];
+                var roomInputMaterial = document.getElementsByClassName('room-input-material');
+                for (var i = 0; i < roomInputMaterial.length; i++) {
+                    if (roomInputMaterial[i].checked) {
+                        currentMaterials.push(roomInputMaterial[i].value);
+                        var roomInputMaterialType = document.getElementsByClassName('room-input-material-' +roomInputMaterial[i].value);
+                        for (var j = 0; j < roomInputMaterialType.length; j++) {
+                            if (roomInputMaterialType[j].checked) {
+                                currentMaterials.push(roomInputMaterialType[j].value);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+                this.setUserMaterials(currentMaterials);
+            }
+
+            function changeRoomOutput(i) {
+                var rooms = document.getElementsByClassName('room-output');
+                var roomPropertiesList = rooms[i].getElementsByTagName('li');
+                roomPropertiesList[0].innerHTML = 'action/materials: ' + this[i].getUserMaterials().join(', ');
+                roomPropertiesList[1].innerHTML = 'price for 1 m: ' + this[i].getPrice();
+                roomPropertiesList[2].innerHTML = 'walls square: ' + this[i].walls().toFixed(2);
+                roomPropertiesList[3].innerHTML = 'cost: ' + this[i].getCost().toFixed(2);
+            }
+
+            function changeTotalOutput(total) {
+                var calcOutput = document.getElementById('calcOutput');
+                var totalOutput = document.getElementsByClassName('total-output')[0];
+                calcOutput.appendChild(totalOutput);
+
+                var totalResult = document.getElementsByClassName('total-result')[0];
+                totalResult.innerHTML = 'Total cost: ' + total.toFixed(2);
+            }
+
+        </script>
+    </body>
+</html>
